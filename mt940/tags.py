@@ -76,7 +76,7 @@ class Tag(object):
     def __new__(cls, *args, **kwargs):
         cls.name = cls.__name__
 
-        words = re.findall('([A-Z][a-z]+)', cls.__name__)
+        words = re.findall('([A-Z][a-z0-9]+)', cls.__name__)
         cls.slug = '_'.join(w.lower() for w in words)
         cls.logger = logger.getChild(cls.name)
 
@@ -259,8 +259,53 @@ class TransactionDetails(Tag):
     pattern = r'(?P<transaction_details>[\s\S]{0,330})'
 
 
+class FileHeader1(Tag):
+
+    '''File header
+    '''
+    id = 1
+    # pattern = r'(?P<file_header1>.*)'
+    pattern = r'F(?P<app_id>01|21)(?P<your_bic>[A-Z]{8,12})(?P<session_nb>\d{4})(?P<seq_nb>\d{6})'
+
+
+class FileHeader2(Tag):
+
+    '''File header
+    '''
+    id = 2
+    # pattern = r'(?P<file_header2>.*)'
+    pattern = r'(?P<mode>I|O)(?P<msg_type>\d{3})(?P<input_time>\d{4})(?P<mir_date>\d{6})(?P<mir_bic>[A-Z0-9]{8,12})(?P<mir_end>\d{10})(?P<output_date>\d{6})(?P<output_time>\d{4})(?P<priority>S|N|U)'
+
+class FileHeader3(Tag):
+
+    '''File header
+    '''
+    id = 3
+    pattern = r'(?P<file_header3>.*)'
+
+
+class FileHeader4(Tag):
+
+    '''File header
+    '''
+    id = 4
+    pattern = r'(?P<file_header4>.*)'
+
+class FileFooter5(Tag):
+
+    '''File header
+    '''
+    id = 5
+    pattern = r'(?P<file_footer5>.*)'
+
+
 @enum.unique
 class Tags(enum.Enum):
+    FILE_HEADER1 = FileHeader1()
+    FILE_HEADER2 = FileHeader2()
+    FILE_HEADER3 = FileHeader3()
+    FILE_HEADER4 = FileHeader4()
+    FILE_FOOTER5 = FileFooter5()
     TRANSACTION_REFERENCE_NUMBER = TransactionReferenceNumber()
     RELATED_REFERENCE = RelatedReference()
     ACCOUNT_IDENTIFICATION = AccountIdentification()

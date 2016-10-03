@@ -144,6 +144,14 @@ class Transactions(collections.Sequence):
         post_transaction_details=[],
         pre_transaction_reference_number=[],
         post_transaction_reference_number=[],
+        pre_file_header2=[],
+        post_file_header2=[],
+        pre_file_header3=[],
+        post_file_header3=[],
+        pre_file_header4=[],
+        post_file_header4=[],
+        pre_file_footer5=[],
+        post_file_footer5=[],
     )
 
     def __init__(self, processors=None):
@@ -203,18 +211,19 @@ class Transactions(collections.Sequence):
         # match it's difficult to get both the beginning and the end so we're
         # working around it in a safer way to get everything.
         tag_re = re.compile(
-            r'^:(?P<full_tag>(?P<tag>[0-9]{2}|NS)(?P<sub_tag>[A-Z])?):',
+            r'(\{|:)(?P<full_tag>(?P<tag>[0-9]{1,2}|NS)(?P<sub_tag>[A-Z])?):',
             re.MULTILINE)
         matches = list(tag_re.finditer(data))
 
         transaction = Transaction(self)
         self.transactions.append(transaction)
-
+        #import ipdb; ipdb.set_trace()
         for i, match in enumerate(matches):
             tag_id = match.group('tag')
             # Since non-digit tags exist, make the conversion optional
             if tag_id.isdigit():
                 tag_id = int(tag_id)
+            #print('Extractiong for tag %s' %tag_id)
 
             assert tag_id in mt940.tags.TAG_BY_ID, 'Unknown tag %r' \
                 'in line: %r' % (tag_id, match.group(0))
@@ -226,20 +235,20 @@ class Transactions(collections.Sequence):
             # regex matches have a `end()` and `start()` to indicate the start
             # and end index of the match.
             if matches[i + 1:]:
-                tag_data = data[match.end():matches[i + 1].start()].strip()
+                tag_data = data[match.end():matches[i + 1].start()].strip().strip('}').strip('{')
             else:
-                tag_data = data[match.end():].strip()
+                tag_data = data[match.end():].strip().strip('}').strip('{')
 
             tag_dict = tag.parse(self, tag_data)
 
             # Preprocess data before creating the object
-            for processor in self.processors.get('pre_%s' % tag.slug):
+            for processor in self.processors.get('pre_%s' % tag.slug, []):
                 tag_dict = processor(self, tag, tag_dict)
 
             result = tag(self, tag_dict)
 
             # Postprocess the object
-            for processor in self.processors.get('post_%s' % tag.slug):
+            for processor in self.processors.get('post_%s' % tag.slug, []):
                 result = processor(self, tag, tag_dict, result)
 
             # Creating a new transaction for :20: and :61: tags allows the
